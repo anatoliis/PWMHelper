@@ -10,14 +10,15 @@ namespace PWMHelper
         public static void Main(string[] args)
         {
             DataHandler dh = new igfxDHLib.DataHandler();
-            int targetPwmFrequency = 2000;
-            
-            int frequencyFromArgument = ParseArguments(args);
-            if (frequencyFromArgument != 0)
-                targetPwmFrequency = frequencyFromArgument;
+            int targetPwmFrequency = ParseArguments(args);
             
             byte[] baseData = GetDataFromDriver(dh);
             int currentPwmFrequency = BitConverter.ToInt32(baseData, 4);
+            if (targetPwmFrequency == 0)
+            {
+                ShowCurrentFrequency(currentPwmFrequency);
+                return;
+            }
             
             if (currentPwmFrequency == targetPwmFrequency)
                 return;
@@ -72,6 +73,11 @@ namespace PWMHelper
         {
             byte[] b = BitConverter.GetBytes(targetPwmFrequency);
             Array.Copy(b, 0, baseData, 4, 4);
+        }
+
+        private static void ShowCurrentFrequency(int currentFrequency)
+        {
+            MessageBox.Show(string.Format("Current frequency: {0}", currentFrequency));
         }
     }
 }
