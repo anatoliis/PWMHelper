@@ -17,7 +17,6 @@ namespace PWMHelper
                 targetPwmFrequency = frequencyFromArgument;
             
             byte[] baseData = GetDataFromDriver(dh);
-            int unknowValue = BitConverter.ToInt32(baseData, 0);
             int currentPwmFrequency = BitConverter.ToInt32(baseData, 4);
             
             if (currentPwmFrequency == targetPwmFrequency)
@@ -47,15 +46,15 @@ namespace PWMHelper
         private static byte[] GetDataFromDriver(DataHandler dh)
         {
             uint error = 0;
-            byte[] data = new byte[8];
+            byte[] baseData = new byte[8];
             
-            dh.GetDataFromDriver(ESCAPEDATATYPE_ENUM.GET_SET_PWM_FREQUENCY, 4, ref error, ref data[0]);
+            dh.GetDataFromDriver(ESCAPEDATATYPE_ENUM.GET_SET_PWM_FREQUENCY, 4, ref error, ref baseData[0]);
             if (error != 0)
             {
                 MessageBox.Show(string.Format("Failed to get current PWM: {0:X}", error));
                 return null;
             }
-            return data;
+            return baseData;
         }
 
         private static void SetNewFrequency(DataHandler dh, byte[] baseData, int targetPwmFrequency)
