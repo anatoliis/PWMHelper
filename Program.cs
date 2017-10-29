@@ -16,14 +16,19 @@ namespace PWMHelper
     {
         private const int MinFrequency = 200;
         private const int MaxFrequency = 25000;
+        private static DataHandler _dh = new DataHandler();
         
         [STAThread]
         public static void Main(string[] args)
         {
-            DataHandler dh = new igfxDHLib.DataHandler();
             int targetPwmFrequency = ParseArguments(args);
+            if (targetPwmFrequency == -1)
+                return;
             
-            byte[] baseData = GetDataFromDriver(dh);
+            byte[] baseData = ReadDataFromDriver();
+            if (baseData == null)
+                return;
+            
             int currentPwmFrequency = BitConverter.ToInt32(baseData, 4);
             if (targetPwmFrequency == 0)
             {
@@ -34,7 +39,7 @@ namespace PWMHelper
             if (currentPwmFrequency == targetPwmFrequency)
                 return;
             
-            SetNewFrequency(dh, baseData, targetPwmFrequency);
+            SetNewFrequency(baseData, targetPwmFrequency);
         }
 
         private static int ParseArguments(string[] args)
@@ -49,18 +54,18 @@ namespace PWMHelper
             if (argValue < MinFrequency || argValue > MaxFrequency)
             {
                 MessageBox.Show(string.Format(MessageString.InvalidValue, MinFrequency, MaxFrequency));
-                return 0;
+                return -1;
             }
 
             return argValue;
         }
 
-        private static byte[] GetDataFromDriver(DataHandler dh)
+        private static byte[] ReadDataFromDriver()
         {
             uint error = 0;
             byte[] baseData = new byte[8];
             
-            dh.GetDataFromDriver(ESCAPEDATATYPE_ENUM.GET_SET_PWM_FREQUENCY, 4, ref error, ref baseData[0]);
+            _dh.GetDataFromDriver(ESCAPEDATATYPE_ENUM.GET_SET_PWM_FREQUENCY, 4, ref error, ref baseData[0]);
             if (error != 0)
             {
                 MessageBox.Show(string.Format(MessageString.ErrorReadingData, error));
@@ -69,12 +74,12 @@ namespace PWMHelper
             return baseData;
         }
 
-        private static void SetNewFrequency(DataHandler dh, byte[] baseData, int targetPwmFrequency)
+        private static void SetNewFrequency(byte[] baseData, int targetPwmFrequency)
         {
             UpdateBaseDataWithNewFrequency(baseData, targetPwmFrequency);
             uint error = 0;
             
-            dh.SendDataToDriver(ESCAPEDATATYPE_ENUM.GET_SET_PWM_FREQUENCY, 4, ref error, ref baseData[0]);
+            _dh.SendDataToDriver(ESCAPEDATATYPE_ENUM.GET_SET_PWM_FREQUENCY, 4, ref error, ref baseData[0]);
 
             if (error != 0)
                 MessageBox.Show(string.Format(MessageString.ErrorWritingData, targetPwmFrequency, error));
