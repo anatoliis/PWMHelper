@@ -4,8 +4,19 @@ using igfxDHLib;
 
 namespace PWMHelper
 {
+    static class MessageString
+    {
+        public const string InvalidValue = "Invalid value. PMM frequency must be in range of {0}-{1}Hz";
+        public const string ErrorReadingData = "Failed to get current PWM: {0:X}";
+        public const string ErrorWritingData = "Failed to set PWM to {0}Hz (error {1:X})";
+        public const string CurrentFrequency = "Current frequency: {0}";
+    }
+    
     class Program
     {
+        private const int MinFrequency = 200;
+        private const int MaxFrequency = 25000;
+        
         [STAThread]
         public static void Main(string[] args)
         {
@@ -35,10 +46,10 @@ namespace PWMHelper
             if (!int.TryParse(args[0], out argValue))
                 return 0;
 
-            if (argValue < 200 || argValue > 25000)
+            if (argValue < MinFrequency || argValue > MaxFrequency)
             {
-                MessageBox.Show("Invalid value. PMM frequency must be in range of 200-25000Hz");
-                return 0;  
+                MessageBox.Show(string.Format(MessageString.InvalidValue, MinFrequency, MaxFrequency));
+                return 0;
             }
 
             return argValue;
@@ -52,7 +63,7 @@ namespace PWMHelper
             dh.GetDataFromDriver(ESCAPEDATATYPE_ENUM.GET_SET_PWM_FREQUENCY, 4, ref error, ref baseData[0]);
             if (error != 0)
             {
-                MessageBox.Show(string.Format("Failed to get current PWM: {0:X}", error));
+                MessageBox.Show(string.Format(MessageString.ErrorReadingData, error));
                 return null;
             }
             return baseData;
@@ -66,7 +77,7 @@ namespace PWMHelper
             dh.SendDataToDriver(ESCAPEDATATYPE_ENUM.GET_SET_PWM_FREQUENCY, 4, ref error, ref baseData[0]);
 
             if (error != 0)
-                MessageBox.Show(string.Format("Failed to set PWM to {0}Hz (error {1:X})", targetPwmFrequency, error));
+                MessageBox.Show(string.Format(MessageString.ErrorWritingData, targetPwmFrequency, error));
         }
         
         private static void UpdateBaseDataWithNewFrequency(byte[] baseData, int targetPwmFrequency)
@@ -77,7 +88,7 @@ namespace PWMHelper
 
         private static void ShowCurrentFrequency(int currentFrequency)
         {
-            MessageBox.Show(string.Format("Current frequency: {0}", currentFrequency));
+            MessageBox.Show(string.Format(MessageString.CurrentFrequency, currentFrequency));
         }
     }
 }
